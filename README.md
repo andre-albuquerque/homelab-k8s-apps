@@ -1,38 +1,87 @@
-# Homelab K8s Apps
+# Homelab Kubernetes Apps
 
-This repository contains the configuration for a Kubernetes-based homelab, managed with Helm and Helmfile.
+This repository contains the configuration for a Kubernetes-based homelab, managing applications using [Helm](https://helm.sh/) and [Helmfile](https://github.com/helmfile/helmfile), along with supporting manifests for infrastructure components.
 
 ## Applications
 
-This repository deploys the following applications:
+The following applications are deployed and managed:
 
-*   **Ingress-Nginx:** An Ingress controller for Kubernetes using NGINX as a reverse proxy and load balancer.
-*   **Longhorn:** A distributed block storage system for Kubernetes.
-*   **Jenkins:** An open-source automation server for building, testing, and deploying software.
-*   **Harbor:** An open-source registry for storing, signing, and scanning container images.
-*   **MetalLB:** A load-balancer implementation for bare metal Kubernetes clusters.
-*   **Minio:** A high-performance, S3 compatible object storage.
+### Core Infrastructure
+*   **Ingress-Nginx:** Ingress controller using NGINX as a reverse proxy and load balancer.
+*   **Cert-Manager:** Native Kubernetes certificate management.
+*   **MetalLB:** Load-balancer implementation for bare metal Kubernetes clusters.
+*   **Longhorn:** Distributed block storage system for Kubernetes.
+*   **Minio:** High-performance, S3 compatible object storage.
 
-## Structure
+### DevOps & Tools
+*   **Jenkins:** Open-source automation server for CI/CD.
+*   **Harbor:** Open-source registry for container images.
 
-The repository is structured as follows:
+## Repository Structure
 
-*   `helmfile.yaml`: The main Helmfile configuration, which defines the Helm releases to be deployed.
-*   `manifests/`: Contains raw Kubernetes manifests for applications not managed by Helm.
-    *   `metallb/`: Configuration for MetalLB.
-    *   `minio/`: Configuration for Minio.
-*   `values/`: Contains `values.yaml` files for the Helm charts, allowing for customization of the deployments.
-    *   `harbor/`: Harbor values.
-    *   `ingress-nginx/`: Ingress-Nginx values.
-    *   `jenkins/`: Jenkins values.
-    *   `longhorn/`: Longhorn values.
+```
+├── helmfile.yaml          # Main Helmfile configuration
+├── manifests/             # Raw Kubernetes manifests (applied via kubectl)
+│   ├── clusterIssuer/     # Cert-Manager ClusterIssuer
+│   ├── metallb/           # MetalLB IPAddressPool and L2Advertisement
+│   └── minio/             # Minio Deployment and Service
+└── values/                # Helm chart values
+    ├── cert-manager/
+    ├── harbor/
+    ├── ingress-nginx/
+    ├── jenkins/
+    └── longhorn/
+```
 
-## Usage
+## Prerequisites
 
-To deploy the applications in this repository, you will need to have [Helm](https://helm.sh/) and [Helmfile](https://github.com/helmfile/helmfile) installed.
+Before deploying, ensure you have the following installed:
 
-Then, you can run the following command:
+*   [Kubernetes Cluster](https://kubernetes.io/) (Accessible via `kubectl`)
+*   [Helm](https://helm.sh/docs/intro/install/) (v3+)
+*   [Helmfile](https://github.com/helmfile/helmfile#installation)
+*   [kubectl](https://kubernetes.io/docs/tasks/tools/)
+
+## Installation
+
+### 1. Apply Infrastructure Manifests
+Apply the raw manifests for MetalLB, Minio, and Cert-Manager configuration:
+
+```bash
+kubectl apply -f manifests/metallb/
+kubectl apply -f manifests/minio/
+kubectl apply -f manifests/clusterIssuer/
+```
+
+### 2. Deploy Helm Releases
+Use Helmfile to deploy the main applications:
 
 ```bash
 helmfile apply
 ```
+
+## Configuration Details
+
+### Networking & Ingress
+*   **MetalLB IP Range:** `192.168.1.150 - 192.168.1.170`
+*   **Ingress Hosts:**
+    *   **Jenkins:** `jenkins.andrealbuquerque.me`
+    *   **Harbor:** `harbor.andrealbuquerque.me`
+
+### Storage
+*   **Longhorn:** Default storage class.
+*   **Minio:** Deployed as a standalone deployment in namespace `minio` (Service type: `ClusterIP`).
+
+### Credentials
+Check the `values.yaml` files in `values/` or your Kubernetes Secrets for initial credentials.
+*   **Minio:** See `manifests/minio/minio.yaml` env vars (Default: `minioadmin` / `minioadmin`).
+
+## Verification
+
+After deployment, check the status of the pods:
+
+```bash
+kubectl get pods -A
+```
+
+Access the applications via their configured Ingress hosts (ensure your DNS or `/etc/hosts` resolves them to your LoadBalancer IP).
