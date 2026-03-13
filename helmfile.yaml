@@ -5,6 +5,8 @@ repositories:
     url: https://charts.jenkins.io
   - name: longhorn
     url: https://charts.longhorn.io
+  - name: jetstack
+    url: https://charts.jetstack.io
 
 releases:
   - name: ingress-nginx
@@ -38,3 +40,11 @@ releases:
     version: 1.18.2
     values:
       - values/harbor/values.yaml
+
+  - name: cert-manager
+    namespace: cert-manager
+    createNamespace: true
+    chart: jetstack/cert-manager
+    version: 1.20.0
+    values:
+      - values/cert-manager/values.yaml
